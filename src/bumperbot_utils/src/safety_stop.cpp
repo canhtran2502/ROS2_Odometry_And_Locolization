@@ -40,7 +40,7 @@ class SafetyStop : public rclcpp::Node
     public:
         SafetyStop() : Node("safety_stop_node"), state_{State::FREE}
         {
-            declare_parameter<double>("danger_disctance", 0.2);
+            declare_parameter<double>("danger_distance", 0.2);
             declare_parameter<std::string>("scan_topic","scan");
             declare_parameter<std::string>("safety_stop_topic", "safety_stop");
 

@@ -23,7 +23,7 @@ class TwistRelay(Node):
             self.joy_twist_callback,
             10
         )
-        self.job_pub = self.create_publisher(
+        self.joy_pub = self.create_publisher(
             Twist,
             "/input_joy/cmd_vel",
             10
@@ -37,8 +37,8 @@ class TwistRelay(Node):
 
     def joy_twist_callback(self, msg):
         twist = Twist()
-        twist = msg
-        self.job_pub.publish(twist)
+        twist = msg.twist
+        self.joy_pub.publish(twist)
 
 def main():
     rclpy.init()

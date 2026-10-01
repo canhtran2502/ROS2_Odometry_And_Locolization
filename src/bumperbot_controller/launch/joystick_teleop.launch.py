@@ -9,8 +9,8 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-
-    bumperbot_controller_pkg = get_package_share_directory("bumperbot_controller")
+    
+    bumperbot_controller_pkg = get_package_share_directory('bumperbot_controller')
 
     use_sim_time_arg = DeclareLaunchArgument(name="use_sim_time", default_value="True",
                                       description="Use simulated time"
@@ -43,7 +43,7 @@ def generate_launch_description():
             "config_locks": os.path.join(bumperbot_controller_pkg, "config", "twist_mux_locks.yaml"),
             "config_joy":  os.path.join(bumperbot_controller_pkg, "config", "twist_mux_joy.yaml"),
             "use_sim_time": LaunchConfiguration("use_sim_time")
-        }.items()
+        }.items(),
     )
 
     twist_relay_node = Node(
@@ -59,6 +59,6 @@ def generate_launch_description():
             joy_teleop,
             joy_node,
             twist_mux_launch,
-            twist_relay_node
+            twist_relay_node,
         ]
     )

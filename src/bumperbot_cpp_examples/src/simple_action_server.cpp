@@ -35,7 +35,7 @@ namespace bumperbot_cpp_examples
                 sequence.push_back(1);
                 auto result = std::make_shared<bumperbot_msgs::action::Fibonacci::Result>();
 
-                for(int i=0; (i<goal->order) && rclcpp::ok(); i++){
+                for(int i=1; (i<goal->order) && rclcpp::ok(); i++){
                     if(goal_handle->is_canceling()){
                         result->sequence=sequence;
                         goal_handle->canceled(result);

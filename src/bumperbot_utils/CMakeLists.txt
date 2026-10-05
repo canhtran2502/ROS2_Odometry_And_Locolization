@@ -18,7 +18,7 @@ find_package(visualization_msgs REQUIRED)
 ament_python_install_package(${PROJECT_NAME})
 
 add_executable(safety_stop src/safety_stop.cpp)
-ament_target_dependencies(safety_stop rclcpp rclcpp_action std_msgs sensor_msgs twist_mux_msgs)
+ament_target_dependencies(safety_stop rclcpp rclcpp_action std_msgs sensor_msgs twist_mux_msgs visualization_msgs)
 
 install(TARGETS
   safety_stop

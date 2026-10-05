@@ -13,6 +13,7 @@ find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(twist_mux_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 ament_python_install_package(${PROJECT_NAME})
 

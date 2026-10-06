@@ -9,7 +9,7 @@ class SimpleQoSSubscriber(Node):
     def __init__(self):
         super().__init__("simple_sqos_ubscriber")
 
-        self.qos_profile_pub = QoSProfile(depth=10)
+        self.qos_profile_sub_ = QoSProfile(depth=10)
         self.declare_parameter("reliability", "system_default")
         self.declare_parameter("durability", "system_default")
 
@@ -17,31 +17,31 @@ class SimpleQoSSubscriber(Node):
         durability = self.get_parameter("durability").get_parameter_value().string_value
 
         if reliability == "best_effort":
-            self.qos_profile_pub.reliability = QoSReliabilityPolicy.BEST_EFFORT
+            self.qos_profile_sub_.reliability = QoSReliabilityPolicy.BEST_EFFORT
             self.get_logger().info("[Reliability] : Best Effort")
         elif reliability == "reliable":
-            self.qos_profile_pub.reliability = QoSReliabilityPolicy.RELIABLE
+            self.qos_profile_sub_.reliability = QoSReliabilityPolicy.RELIABLE
             self.get_logger().info("[Reliability] : Reliable")
         elif reliability == "system_default":
-            self.qos_profile_pub.reliability = QoSReliabilityPolicy.SYSTEM_DEFAULT
+            self.qos_profile_sub_.reliability = QoSReliabilityPolicy.SYSTEM_DEFAULT
             self.get_logger().info("[Reliability] : System Default")
         else:
             self.get_logger().error("Selected Reliability QoS: %s doesn't exists" % reliability)
             return
 
         if durability == "volatile":
-            self.qos_profile_pub.durability = QoSDurabilityPolicy.VOLATILE
+            self.qos_profile_sub_.durability = QoSDurabilityPolicy.VOLATILE
             self.get_logger().info("[Durability] : Volatile")
         elif durability == "transient_local":
-            self.qos_profile_pub.durability = QoSDurabilityPolicy.TRANSIENT_LOCAL
+            self.qos_profile_sub_.durability = QoSDurabilityPolicy.TRANSIENT_LOCAL
             self.get_logger().info("[Durability] : Transient Local")
         elif durability == "system_default":
-            self.qos_profile_pub.durability = QoSDurabilityPolicy.SYSTEM_DEFAULT
+            self.qos_profile_sub_.durability = QoSDurabilityPolicy.SYSTEM_DEFAULT
             self.get_logger().info("[Durability] : System Default")
         else:
             self.get_logger().error("Selected Durability QoS: %s doesn't exists" % durability)
             return
-        self.sub_ = self.create_subscription(String, "chatter", self.msgCallback, self.qos_profile_pub)
+        self.sub_ = self.create_subscription(String, "chatter", self.msgCallback, self.qos_profile_sub_)
         self.sub_
 
     def msgCallback(self, msg):

@@ -96,6 +96,8 @@ install(TARGETS
   simple_service_client
   simple_tf_kinematics
   simple_lifecycle_node
+  simple_qos_publisher
+  simple_qos_subscriber
   DESTINATION lib/${PROJECT_NAME}
 )
 

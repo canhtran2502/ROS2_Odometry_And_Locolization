@@ -4,7 +4,8 @@ import math
 from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid, MapMetaData 
 from sensor_msgs.msg import LaserScan
-from tf2_ros import Buffer, TransformListener, LookupExeption
+from tf2_ros import Buffer, TransformListener
+from tf2_ros import LookupException
 from tf_transformations import euler_from_quaternion
 
 class Pose:
@@ -56,7 +57,7 @@ class MappingWithKnownPoses(Node):
     def scan_callback(self, scan: LaserScan):
         try:
             t = self.tf_buffer.lookup_transform(self.map_.header.frame_id, scan.header.frame_id, rclpy.time.Time())
-        except LookupExeption:
+        except LookupException:
             self.get_logger().error("Unable to transform between /odom and /base_footprint")
             return
 

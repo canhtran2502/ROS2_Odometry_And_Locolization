@@ -21,6 +21,10 @@ namespace bumperbot_mapping {
     
     bool poseOnMap(const Pose & pose, const nav_msgs::msg::MapMetaData & map_info);
 
+    std::vector<Pose> bresenham(const Pose & start, const Pose & end);
+
+    std::vector<std::pair<Pose, unsigned int>> inverseSensorModel(const Pose & p_robot, const Pose & p_beam);
+
     class MappingWithKnownPoses : public rclcpp::Node
     {
         public:

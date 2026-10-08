@@ -25,6 +25,64 @@ namespace bumperbot_mapping
         return map_info.width * pose.y + pose.x;
     }
 
+    std::vector<Pose> bresenham(const Pose & start, const Pose & end)
+    {
+        std::vector<Pose> line;
+        int dx = end.x - start.x;
+        int dy = end.y - start.y;
+        int xsign = dx > 0 ? 1 : -1;
+        int ysign = dy > 0 ? 1 : -1;
+        dx = std::abs(dx);
+        dy = std::abs(dy);
+        int xx, xy, yx, yy;
+
+        if(dx > dy)
+        {
+            xx = xsign;
+            xy = 0;
+            yx = 0;
+            yy = ysign;
+        }
+        else
+        {
+            int tmp = dx;
+            dx = dy;
+            dy = tmp;
+            xx = 0;
+            xy = ysign;
+            yx = xsign;
+            yy = 0;
+        }
+
+        int D = 2 * dy - dx;
+        int y = 0;
+        line.reserve(dx + 1);
+
+        for (int i = 0; i < dx + 1; i++)
+        {
+            line.emplace_back(Pose(start.x + i * xx + y * yx, start.y + i * xy + y * yy));
+            if(D >= 0)
+            {
+                y++;
+                D -= 2 * dx;
+            }
+                D += 2 * dy;
+            }
+        return line;
+    }
+
+    std::vector<std::pair<Pose, unsigned int>> inverseSensorModel(const Pose & p_robot, const Pose & p_beam)
+    {
+        std::vector<std::pair<Pose, unsigned int>> occ_values;
+        std::vector<Pose> line = bresenham(p_robot, p_beam);
+        occ_values.reserve(line.size());
+        for (size_t i = 0; i < line.size() - 1u; i++){
+            occ_values.emplace_back(std::pair<Pose, unsigned int>(line.at(i), 0u));
+        }
+        occ_values.emplace_back(std::pair<Pose, unsigned int>(line.back(), 100u));
+        return occ_values;
+    }
+
     MappingWithKnownPoses::MappingWithKnownPoses(const std::string &name) : Node(name)
     {
         declare_parameter<double>("width", 50.0);
@@ -82,6 +140,13 @@ namespace bumperbot_mapping
             Pose beam_p = coordinatesToPose(px, py, map_.info);
             if(!poseOnMap(beam_p, map_.info)){
                 continue;
+            }
+            std::vector<std::pair<Pose, unsigned int>>poses = inverseSensorModel(robot_p, beam_p);
+            for (const auto & pose : poses){
+                if(poseOnMap(pose.first, map_.info)){
+                    unsigned int cell = poseToCell(pose.first, map_.info);
+                    map_.data.at(cell) = pose.second;
+                }
             }
             unsigned int cell = poseToCell(beam_p, map_.info);
             map_.data.at(cell) = 100;

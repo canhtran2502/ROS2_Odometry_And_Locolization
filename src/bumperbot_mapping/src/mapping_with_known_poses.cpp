@@ -66,8 +66,26 @@ namespace bumperbot_mapping
             return;
         }
 
-        unsigned int robot_cell = poseToCell(robot_p, map_.info);
-        map_.data.at(robot_cell) = 100;
+        tf2::Quaternion q(t.transform.rotation.x, t.transform.rotation.y, t.transform.rotation.z, t.transform.rotation.w);
+        tf2::Matrix3x3 m(q);
+        double roll, pitch, yaw;
+        m.getRPY(roll, pitch, yaw);
+
+        for (size_t i = 0; i < scan.ranges.size(); i++)
+        {
+            double angle = scan.angle_min + (i * scan.angle_increment) + yaw;
+            double px = scan.ranges.at(i) * std::cos(angle); 
+            double py = scan.ranges.at(i) * std::sin(angle);
+            px += t.transform.translation.x;
+            py += t.transform.translation.y;
+
+            Pose beam_p = coordinatesToPose(px, py, map_.info);
+            if(!poseOnMap(beam_p, map_.info)){
+                continue;
+            }
+            unsigned int cell = poseToCell(beam_p, map_.info);
+            map_.data.at(cell) = 100;
+        }
     }
 
     void MappingWithKnownPoses::timerCallback()

@@ -8,6 +8,9 @@ from tf2_ros import Buffer, TransformListener
 from tf2_ros import LookupException
 from tf_transformations import euler_from_quaternion
 
+PRIOR_PROB = 0.5
+OCC_PROB = 0.9
+FREE_PROB = 0.35
 class Pose:
     def __init__(self, px=0, py=0):
         self.x = px
@@ -60,9 +63,18 @@ def inverseSensorModel(p_robot: Pose, p_beam: Pose):
     occ_values = []
     line = bresenham(p_robot, p_beam)
     for pose in line[:-1]:
-        occ_values.append((pose, 0))
-    occ_values.append((line[-1], 100))
+        occ_values.append((pose, FREE_PROB))
+    occ_values.append((line[-1], OCC_PROB))
     return occ_values
+
+def prob2logodds(p):
+    return math.log(p / (1-p))
+
+def logodds2prob(l):
+    try: 
+        return 1 - (1 / (1 + math.exp(l)))
+    except OverflowError:
+        return 1.0 if l > 0 else 0.0
 class MappingWithKnownPoses(Node):
     def __init__(self, name):
         super().__init__(name)
@@ -84,6 +96,8 @@ class MappingWithKnownPoses(Node):
         self.map_.info.origin.position.y = float(-round(height / 2.0))
         self.map_.header.frame_id = "odom"
         self.map_.data = [-1] * (self.map_.info.width * self.map_.info.height)
+
+        self.probability_map_ = [prob2logodds(PRIOR_PROB)] * (self.map_.info.width * self.map_.info.height)
 
         self.map_pub = self.create_publisher(OccupancyGrid, "map", 1)
         self.scan_sub = self.create_subscription(LaserScan, "scan", self.scan_callback, 10)
@@ -122,10 +136,12 @@ class MappingWithKnownPoses(Node):
             poses = inverseSensorModel(robot_p, beam_p)
             for pose, value in poses:
                 cell = poseToCell(pose, self.map_.info)
-                self.map_.data[cell] = value      
+                self.probability_map_[cell] += prob2logodds(value) - prob2logodds(PRIOR_PROB)
+            
 
     def timer_callback(self):
         self.map_.header.stamp = self.get_clock().now().to_msg()
+        self.map_.data = [int(logodds2prob(value) * 100) for value in self.probability_map_]
         self.map_pub.publish(self.map_)
 
 def main():

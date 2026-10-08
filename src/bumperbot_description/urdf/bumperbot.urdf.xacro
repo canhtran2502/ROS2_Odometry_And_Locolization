@@ -218,9 +218,10 @@
   </link>
 
   <joint name="laser_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="laser_link"/>
-    <origin xyz="0.0 0.0 0.1208" rpy="0 0 0"/>
+    <origin xyz="-0.0050526 -0.0023221 0.1208" rpy="0 0 3.14" />
+    <parent link="base_link" />
+    <child link="laser_link" />
+    <axis xyz="0 0 0" />
   </joint>
 
   <material name="blue">

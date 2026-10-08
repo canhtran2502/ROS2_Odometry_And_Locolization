@@ -71,16 +71,26 @@ namespace bumperbot_mapping
         return line;
     }
 
-    std::vector<std::pair<Pose, unsigned int>> inverseSensorModel(const Pose & p_robot, const Pose & p_beam)
+    std::vector<std::pair<Pose, double>> inverseSensorModel(const Pose & p_robot, const Pose & p_beam)
     {
-        std::vector<std::pair<Pose, unsigned int>> occ_values;
+        std::vector<std::pair<Pose, double>> occ_values;
         std::vector<Pose> line = bresenham(p_robot, p_beam);
         occ_values.reserve(line.size());
         for (size_t i = 0; i < line.size() - 1u; i++){
-            occ_values.emplace_back(std::pair<Pose, unsigned int>(line.at(i), 0u));
+            occ_values.emplace_back(std::pair<Pose, double>(line.at(i), FREE_PROB));
         }
-        occ_values.emplace_back(std::pair<Pose, unsigned int>(line.back(), 100u));
+        occ_values.emplace_back(std::pair<Pose, double>(line.back(), OCC_PROB));
         return occ_values;
+    }
+
+    double prob2logodds(double p)
+    {
+        return std::log(p / (1-p));
+    }
+
+    double logodds2prob(double l)
+    {
+        return 1 - (1 / ( 1 + std::exp(l)));
     }
 
     MappingWithKnownPoses::MappingWithKnownPoses(const std::string &name) : Node(name)
@@ -98,6 +108,8 @@ namespace bumperbot_mapping
         map_.info.origin.position.y = - std::round(height / 2.0);
         map_.header.frame_id = "odom";
         map_.data = std::vector<int8_t>(map_.info.width * map_.info.height, -1);
+
+        probability_map_ = std::vector<double>(map_.info.height * map_.info.width, prob2logodds(PRIOR_PROB));
 
         map_pub_ = create_publisher<nav_msgs::msg::OccupancyGrid>("map", 1);
         scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>(
@@ -141,21 +153,22 @@ namespace bumperbot_mapping
             if(!poseOnMap(beam_p, map_.info)){
                 continue;
             }
-            std::vector<std::pair<Pose, unsigned int>>poses = inverseSensorModel(robot_p, beam_p);
+            std::vector<std::pair<Pose, double>>poses = inverseSensorModel(robot_p, beam_p);
             for (const auto & pose : poses){
                 if(poseOnMap(pose.first, map_.info)){
                     unsigned int cell = poseToCell(pose.first, map_.info);
-                    map_.data.at(cell) = pose.second;
+                    probability_map_.at(cell) += prob2logodds(pose.second) - prob2logodds(PRIOR_PROB);
                 }
             }
-            unsigned int cell = poseToCell(beam_p, map_.info);
-            map_.data.at(cell) = 100;
         }
     }
 
     void MappingWithKnownPoses::timerCallback()
     {
         map_.header.stamp = get_clock()->now();
+        std::transform(probability_map_.begin(), probability_map_.end(), map_.data.begin(), [](double value){
+            return logodds2prob(value) * 100;
+        });
         map_pub_->publish(map_);
     }
 }

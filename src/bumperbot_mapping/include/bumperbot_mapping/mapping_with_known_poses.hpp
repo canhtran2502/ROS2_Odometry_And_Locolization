@@ -8,6 +8,9 @@
 #include "tf2_ros/buffer.h"
 
 namespace bumperbot_mapping {
+    inline const double PRIOR_PROB = 0.5;
+    inline const double OCC_PROB = 0.9;
+    inline const double FREE_PROB = 0.35;
     struct Pose {
         Pose() = default;
         Pose(const int px, const int py) : x(px), y(py){}
@@ -23,7 +26,11 @@ namespace bumperbot_mapping {
 
     std::vector<Pose> bresenham(const Pose & start, const Pose & end);
 
-    std::vector<std::pair<Pose, unsigned int>> inverseSensorModel(const Pose & p_robot, const Pose & p_beam);
+    std::vector<std::pair<Pose, double>> inverseSensorModel(const Pose & p_robot, const Pose & p_beam);
+
+    double prob2logodds(double p);
+
+    double logodds2prob(double l);
 
     class MappingWithKnownPoses : public rclcpp::Node
     {
@@ -35,6 +42,7 @@ namespace bumperbot_mapping {
             void timerCallback();
 
             nav_msgs::msg::OccupancyGrid map_;
+            std::vector<double> probability_map_;
             rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_sub_;
             rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
             rclcpp::TimerBase::SharedPtr timer_;

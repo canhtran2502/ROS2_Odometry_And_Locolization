@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import rclpy
+import math
 from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid, MapMetaData 
 from sensor_msgs.msg import LaserScan
 from tf2_ros import Buffer, TransformListener, LookupExeption
+from tf_transformations import euler_from_quaternion
 
 class Pose:
     def __init__(self, px=0, py=0):
@@ -63,8 +65,23 @@ class MappingWithKnownPoses(Node):
             self.get_logger().error("The robot is out of the map!")
             return
 
-        robot_cell = poseToCell(robot_p, self.map_.info)
-        self.map_.data[robot_cell] = 100
+        (roll, pitch, yaw) = euler_from_quaternion([t.transform.rotation.x, t.transform.rotation.y, 
+                        t.transform.rotation.z, t.transform.rotation.w])
+        
+        for i in range(len(scan.ranges)):
+            if math.isinf(scan.ranges[i]):
+                continue
+
+            angle = scan.angle_min + (i * scan.angle_increment) + yaw
+            px = scan.ranges[i] * math.cos(angle)
+            py = scan.ranges[i] * math.sin(angle)
+            px += t.transform.translation.x
+            py += t.transform.translation.y
+            beam_p = coordinatesToPose(px, py, self.map_.info)
+            if not poseOnMap(beam_p, self.map_.info):
+                continue
+            cell = poseToCell(beam_p, self.map_.info)
+            self.map_.data[cell] = 100
 
     def timer_callback(self):
         self.map_.header.stamp = self.get_clock().now().to_msg()
